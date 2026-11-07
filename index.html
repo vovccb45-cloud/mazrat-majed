@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نقطة البيع - مزرعة الماجد للدجاج 🐔</title>
+    <!-- استدعاء مكاتب فايربيس -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root { --primary: #d32f2f; --success: #27ae60; --bg: #f4f7f6; --white: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 10px; }
+        .full-width { grid-column: span 2; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
+        .total-highlight { background-color: #e8f5e9; color: var(--success); font-weight: bold; font-size: 18px !important; }
+        .btn-save { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .footer { text-align: center; margin-top: 25px; font-size: 14px; font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>مزرعة الماجد للدجاج 🐔<br><span style="font-size: 16px; color:#555;">(نقطة البيع)</span></h2>
+        
+        <div class="grid-form">
+            <div class="form-group full-width">
+                <label>اسم الزبون:</label>
+                <input type="text" id="customerName" placeholder="أدخل اسم الزبون..." required>
+            </div>
+            <div class="form-group">
+                <label>رقم الهاتف:</label>
+                <input type="tel" id="customerPhone" placeholder="07700000000" required>
+            </div>
+            <div class="form-group">
+                <label>تاريخ الطلب:</label>
+                <input type="date" id="orderDate" required>
+            </div>
+            <div class="form-group">
+                <label>الصنف:</label>
+                <select id="itemCategory" onchange="updateDefaultPrice()" required>
+                    <option value="" disabled selected>اختر الصنف...</option>
+                    <option value="صدر دجاج" data-price="5000">صدر دجاج</option>
+                    <option value="أجنحة" data-price="5000">أجنحة</option>
+                    <option value="دجاج" data-price="3000">دجاج</option>
+                    <option value="أفخاذ" data-price="5000">أفخاذ</option>
+                    <option value="كبدة" data-price="4000">كبدة</option>
+                    <option value="حواصل" data-price="5000">حواصل</option>
+                    <option value="صنف آخر" data-price="">صنف آخر (تسعير يدوي)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>سعر الكيلو:</label>
+                <input type="number" id="unitPrice" oninput="calculateTotal()" required>
+            </div>
+            <div class="form-group">
+                <label>الوزن:</label>
+                <input type="number" id="itemQuantity" step="0.25" value="1" oninput="calculateTotal()" required>
+            </div>
+            <div class="form-group">
+                <label>العدد:</label>
+                <input type="number" id="itemCount" value="1" oninput="calculateTotal()" required>
+            </div>
+            <div class="form-group full-width">
+                <label>الإجمالي (تلقائي):</label>
+                <input type="number" id="totalPrice" class="total-highlight" readonly>
+            </div>
+        </div>
+
+        <button class="btn-save" onclick="saveOrderToCloud()">إرسال الطلب للإدارة 🚀</button>
+        <div class="footer">المبرمج محمد المولى ⚙️🥰</div>
+    </div>
+
+    <script>
+        // --- ضع أكواد الربط الخاصة بفايربيس هنا ---
+        const firebaseConfig = {
+            apiKey: "ضع_مفتاحك_هنا",
+            authDomain: "مشروعك.firebaseapp.com",
+            databaseURL: "https://مشروعك.firebaseio.com",
+            projectId: "مشروعك",
+            storageBucket: "مشروعك.appspot.com",
+            messagingSenderId: "رقم",
+            appId: "رقم"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        document.getElementById('orderDate').valueAsDate = new Date();
+
+        function updateDefaultPrice() {
+            const select = document.getElementById('itemCategory');
+            document.getElementById('unitPrice').value = select.options[select.selectedIndex].dataset.price || "";
+            calculateTotal(); 
+        }
+
+        function calculateTotal() {
+            const unit = parseFloat(document.getElementById('unitPrice').value) || 0;
+            const qty = parseFloat(document.getElementById('itemQuantity').value) || 0;
+            const cnt = parseInt(document.getElementById('itemCount').value) || 0;
+            document.getElementById('totalPrice').value = unit * qty * cnt;
+        }
+
+        function saveOrderToCloud() {
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            const category = document.getElementById('itemCategory').value;
+            const unitPrice = document.getElementById('unitPrice').value;
+
+            if (!name || !phone || !category || !unitPrice) {
+                alert("يرجى تعبئة الحقول الأساسية!"); return;
+            }
+
+            const orderData = {
+                name: name,
+                phone: phone,
+                date: document.getElementById('orderDate').value,
+                category: category,
+                unitPrice: unitPrice,
+                quantity: document.getElementById('itemQuantity').value,
+                count: document.getElementById('itemCount').value,
+                price: document.getElementById('totalPrice').value,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            // الرفع لقاعدة البيانات
+            database.ref('orders').push(orderData).then(() => {
+                alert("تم إرسال الطلب للمحل بنجاح ✅");
+                location.reload(); // تحديث الصفحة لطلب جديد
+            }).catch(error => {
+                alert("حدث خطأ أثناء الاتصال: " + error.message);
+            });
+        }
+    </script>
+</body>
+</html>

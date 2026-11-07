@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>توصيل طلبات - مزرعة الماجد للدجاج 🐔</title>
+    <style>
+        :root { --primary: #d32f2f; --success: #25D366; --bg: #f8f9fa; --white: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; background: var(--white); padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.08); border-top: 5px solid var(--primary); }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: var(--primary); margin: 0 0 5px 0; font-size: 26px; }
+        .header p { margin: 0; color: #666; font-size: 14px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: #444; }
+        input, select, textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; box-sizing: border-box; font-size: 15px; transition: border-color 0.3s; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; }
+        .price-box { background: #fff3f3; border: 2px dashed var(--primary); padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+        .price-box h3 { margin: 0; color: var(--primary); font-size: 22px; }
+        .btn-order { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .btn-order:hover { background: #128C7E; }
+        .footer { text-align: center; margin-top: 20px; font-size: 13px; font-weight: bold; color: #888; border-top: 1px solid #eee; padding-top: 15px; }
+        .row { display: flex; gap: 15px; }
+        .row .form-group { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>مزرعة الماجد للدجاج 🐔</h1>
+            <p>أهلاً بك! اطلب الآن وسنصلك أينما كنت</p>
+        </div>
+
+        <div class="form-group">
+            <label>الاسم الكريم:</label>
+            <input type="text" id="custName" placeholder="اكتب اسمك..." required>
+        </div>
+        
+        <div class="form-group">
+            <label>رقم الهاتف للاتصال بك:</label>
+            <input type="tel" id="custPhone" placeholder="مثال: 07700000000" required>
+        </div>
+
+        <div class="form-group">
+            <label>العنوان التفصيلي:</label>
+            <textarea id="custAddress" rows="3" placeholder="المنطقة، الشارع، أقرب نقطة دالة..." required></textarea>
+        </div>
+
+        <hr style="border: 1px solid #eee; margin: 20px 0;">
+
+        <div class="form-group">
+            <label>ماذا تود أن تطلب؟</label>
+            <select id="custCategory" onchange="updatePrice()" required>
+                <option value="" disabled selected>اختر الصنف...</option>
+                <option value="صدر دجاج" data-price="5000">صدر دجاج (5,000 د.ع / للكيلو)</option>
+                <option value="أجنحة" data-price="5000">أجنحة (5,000 د.ع / للكيلو)</option>
+                <option value="دجاج كامل" data-price="3000">دجاج كامل (3,000 د.ع / للكيلو)</option>
+                <option value="أفخاذ" data-price="5000">أفخاذ (5,000 د.ع / للكيلو)</option>
+                <option value="كبدة" data-price="4000">كبدة (4,000 د.ع / للكيلو)</option>
+                <option value="حواصل" data-price="5000">حواصل (5,000 د.ع / للكيلو)</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>الوزن (كيلو):</label>
+                <input type="number" id="custQuantity" step="0.25" value="1" min="0.25" oninput="updatePrice()" required>
+            </div>
+            <div class="form-group">
+                <label>العدد:</label>
+                <input type="number" id="custCount" value="1" min="1" oninput="updatePrice()" required>
+            </div>
+        </div>
+
+        <div class="price-box">
+            <span style="font-size: 14px; color: #555;">المجموع التقريبي لطلبك:</span>
+            <h3 id="displayTotal">0 دينار</h3>
+        </div>
+
+        <button class="btn-order" onclick="sendOrderViaWhatsApp()">
+            إرسال الطلب عبر واتساب 💬
+        </button>
+
+        <div class="footer">
+            المبرمج محمد المولى ⚙️🥰
+        </div>
+    </div>
+
+    <script>
+        let currentTotal = 0;
+
+        function updatePrice() {
+            const select = document.getElementById('custCategory');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if(!selectedOption.value) return; 
+
+            const unitPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+            const quantity = parseFloat(document.getElementById('custQuantity').value) || 0;
+            const count = parseInt(document.getElementById('custCount').value) || 0;
+
+            currentTotal = unitPrice * quantity * count;
+            
+            document.getElementById('displayTotal').innerText = currentTotal.toLocaleString('en-US') + " دينار";
+        }
+
+        function sendOrderViaWhatsApp() {
+            const name = document.getElementById('custName').value;
+            const phone = document.getElementById('custPhone').value;
+            const address = document.getElementById('custAddress').value;
+            const category = document.getElementById('custCategory').value;
+            const quantity = document.getElementById('custQuantity').value;
+            const count = document.getElementById('custCount').value;
+
+            if (!name || !phone || !address || !category) {
+                alert("عزيزي الزبون، يرجى إكمال بياناتك (الاسم، الهاتف، العنوان، واختيار الطلب) قبل الإرسال.");
+                return;
+            }
+
+            const restaurantWhatsApp = "9647889321388"; 
+
+            let invoice = `*🛵 طلب توصيل جديد - زبون أونلاين*\n`;
+            invoice += `ـــــــــــــــــــــــــــــــــــــــــ\n`;
+            invoice += `*👤 الاسم:* ${name}\n`;
+            invoice += `*📞 الهاتف:* ${phone}\n`;
+            invoice += `*📍 العنوان:* ${address}\n`;
+            invoice += `ـــــــــــــــــــــــــــــــــــــــــ\n`;
+            invoice += `*🍗 الطلب:* ${category}\n`;
+            invoice += `*⚖️ الوزن المطلوب:* ${quantity} كغم\n`;
+            invoice += `*🔢 العدد:* ${count}\n`;
+            invoice += `ـــــــــــــــــــــــــــــــــــــــــ\n`;
+            invoice += `*💰 الحساب الإجمالي:* ${currentTotal.toLocaleString('en-US')} دينار\n\n`;
+            invoice += `*(يضاف مبلغ التوصيل حسب المنطقة)*\n`;
+            invoice += `*المبرمج محمد المولى ⚙️🥰*`;
+
+            const encodedMsg = encodeURIComponent(invoice);
+            window.open(`https://wa.me/${restaurantWhatsApp}?text=${encodedMsg}`, '_blank');
+        }
+    </script>
+</body>
+</html>
